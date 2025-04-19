@@ -1,0 +1,21 @@
+[project]
+name = "cargo-trac"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.1",
+    "polars[numpy,pandas]>=1.27.1",
+    "seaborn>=0.13.2",
+    "streamlit>=1.44.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "watchdog>=6.0.0",
+]
