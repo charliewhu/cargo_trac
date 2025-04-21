@@ -43,7 +43,7 @@ def get_indics_for_dates(
         )
 
         # move date by 0-1 days
-        date += timedelta(days=random.choices([0, 1], weights=[0.8, 0.2])[0])
+        date += timedelta(days=random.choices([0, 1], weights=[0.9, 0.1])[0])
 
         # add variability to indics
         pricing += round(random.randint(-10, 10) / 100, 1)
