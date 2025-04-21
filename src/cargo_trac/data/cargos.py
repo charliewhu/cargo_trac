@@ -1,68 +1,18 @@
 import typing as t
 import random
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, date
+from datetime import timedelta, date
 import polars as pl
 import streamlit as st
-
-BASE_DATE = datetime(2025, 6, 1)
-
-grades = [
-    {"grade": "Forcados", "group": "medium"},
-    {"grade": "Bonny Light", "group": "light"},
-    {"grade": "Qua Iboe", "group": "light"},
-    {"grade": "Escravos", "group": "medium"},
-    {"grade": "Bonga", "group": "medium"},
-    {"grade": "EA", "group": "light"},
-    {"grade": "Rabi Blend", "group": "heavy"},
-    {"grade": "Agbami", "group": "heavy"},
-    {"grade": "Murban", "group": "light"},
-    {"grade": "WTI", "group": "medium"},
-    {"grade": "Oriente", "group": "heavy"},
-]
-incoterms = ["FOB", "CIF", "DAP"]
-counterparties = [
-    "Shell",
-    "Chevron",
-    "Exxon",
-    "Total",
-    "Vitol",
-    "BP",
-    "Trafigura",
-    "Glencore",
-    "Unipec",
-    "PetroChina",
-    "ENOC",
-    "Mercuria",
-    "Litasco",
-    "Gunvor",
-    "P66",
-    "Other",
-]
-
-
-def create_random_date(base_date=BASE_DATE):
-    return (base_date + timedelta(days=random.randint(0, 60))).date()
-
-
-def create_random_volume():
-    return random.choice([650, 950, 1000, 1050])
-
-
-def get_random_grade():
-    return random.choice(grades)
-
-
-def create_counterparty(name: t.Optional[str] = None):
-    return random.choice(counterparties)
+from . import dims
 
 
 @dataclass(unsafe_hash=True)
 class Cargo:
-    grade: dict = field(default_factory=get_random_grade)
-    equity_holder: str = field(default_factory=create_counterparty)
-    bl_date: date = field(default_factory=create_random_date)
-    volume_kbbl: int = field(default_factory=create_random_volume)
+    grade: dict = field(default_factory=dims.get_random_grade)
+    equity_holder: str = field(default_factory=dims.get_random_counterparty)
+    bl_date: date = field(default_factory=dims.create_random_date)
+    volume_kbbl: int = field(default_factory=dims.create_random_volume)
 
 
 @dataclass(unsafe_hash=True)
@@ -70,10 +20,10 @@ class Trade:
     cargo: Cargo
     order_in_chain: int
     struck_date: date
-    seller: str = field(default_factory=create_counterparty)
-    buyer: str = field(default_factory=create_counterparty)
+    seller: str = field(default_factory=dims.get_random_counterparty)
+    buyer: str = field(default_factory=dims.get_random_counterparty)
     incoterm: t.Literal["FOB", "CIF", "DAP"] = field(
-        default_factory=lambda: random.choice(incoterms)
+        default_factory=lambda: random.choice(dims.incoterms)
     )  # type: ignore
     pricing: float = field(
         default_factory=lambda: round(random.randint(-300, 600) / 100, 1)
@@ -95,20 +45,21 @@ def create_trade_chain_for_cargo(cargo: Cargo, chain_length: int) -> list[Trade]
 
     for i in range(chain_length):
         # Avoid self-selling
-        possible_buyers = [name for name in counterparties if name != current_seller]
+        possible_buyers = [
+            name for name in dims.counterparties if name != current_seller
+        ]
         buyer_name = random.choice(possible_buyers)
-        current_buyer = create_counterparty(buyer_name)
 
         trade = Trade(
             cargo=cargo,
             order_in_chain=i + 1,
             struck_date=trade_date,
             seller=current_seller,
-            buyer=current_buyer,
+            buyer=buyer_name,
             pricing=diff,
         )
         trades.append(trade)
-        current_seller = current_buyer  # Ownership passes on
+        current_seller = buyer_name  # Ownership passes on
         trade_date += timedelta(days=random.randint(1, 5))  # increment
         diff += round(random.randint(-50, 50) / 100, 1)
 
